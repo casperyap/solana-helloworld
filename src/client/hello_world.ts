@@ -19,6 +19,7 @@ const BufferLayout = require('@solana/buffer-layout');
 const {Buffer} =require('buffer');
 
 import {getPayer, getRpcUrl, createKeypairFromFile} from './utils';
+import { Int } from '@solana/buffer-layout';
 
 /**
  * Connection to the network
@@ -212,10 +213,10 @@ function createDecreamentInstruction(): Buffer {
   return data;
 }
 
-function createSetInstruction(): Buffer {
+function createSetInstruction(in_value: Number): Buffer {
   const layout = BufferLayout.struct([BufferLayout.u8('instruction'), BufferLayout.u32('value')]);
   const data = Buffer.alloc(layout.span);
-  layout.encode({instruction: 2, value: 100}, data);
+  layout.encode({instruction: 2, value: in_value}, data);
   return data;
 }
 
@@ -227,7 +228,9 @@ export async function sayHello(): Promise<void> {
   const instruction = new TransactionInstruction({
     keys: [{pubkey: greetedPubkey, isSigner: false, isWritable: true}],
     programId,
-    data: createIncreamentInstruction(), // All instructions are hellos
+    // data: createIncreamentInstruction(), // Set Instructions
+    // data: createDecreamentInstruction(), // Set Instructions
+    data: createSetInstruction(100), // Set Instructions
   });
   await sendAndConfirmTransaction(
     connection,
