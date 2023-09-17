@@ -8,7 +8,7 @@ use solana_sdk::{
     signature::Signer,
     transaction::Transaction,
 };
-use std::mem;
+use std::{mem, str::FromStr};
 
 #[tokio::test]
 async fn test_helloworld() {
@@ -45,10 +45,11 @@ async fn test_helloworld() {
     );
 
     // Greet once
+    let instruction_data: Vec<u8> = vec![0,0,0,0,0];
     let mut transaction = Transaction::new_with_payer(
-        &[Instruction::new_with_bincode(
+        &[Instruction::new_with_bytes(
             program_id,
-            &[0], // ignored but makes the instruction unique in the slot
+            &instruction_data,
             vec![AccountMeta::new(greeted_pubkey, false)],
         )],
         Some(&payer.pubkey()),
@@ -70,11 +71,12 @@ async fn test_helloworld() {
     );
 
     // Greet again
+    let instruction_data: Vec<u8> = vec![0,0,0,0,1]; // the last byte is ignored but makes the instruction unique in the slot
     let mut transaction = Transaction::new_with_payer(
-        &[Instruction::new_with_bincode(
-            program_id,
-            &[1], // ignored but makes the instruction unique in the slot
-            vec![AccountMeta::new(greeted_pubkey, false)],
+      &[Instruction::new_with_bytes(
+          program_id,
+          &instruction_data, 
+          vec![AccountMeta::new(greeted_pubkey, false)],
         )],
         Some(&payer.pubkey()),
     );
@@ -92,5 +94,135 @@ async fn test_helloworld() {
             .unwrap()
             .counter,
         2
+    );
+
+    // Decrease counter
+    let instruction_data: Vec<u8> = vec![1,0,0,0,0]; 
+    let mut transaction = Transaction::new_with_payer(
+      &[Instruction::new_with_bytes(
+          program_id,
+          &instruction_data, 
+          vec![AccountMeta::new(greeted_pubkey, false)],
+        )],
+        Some(&payer.pubkey()),
+    );
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    // Verify account has two greetings
+    let greeted_account = banks_client
+        .get_account(greeted_pubkey)
+        .await
+        .expect("get_account")
+        .expect("greeted_account not found");
+    assert_eq!(
+        GreetingAccount::try_from_slice(&greeted_account.data)
+            .unwrap()
+            .counter,
+        1
+    );
+
+    // Set counter
+    let instruction_data: Vec<u8> = vec![2,202,0,0,0]; 
+    let mut transaction = Transaction::new_with_payer(
+      &[Instruction::new_with_bytes(
+          program_id,
+          &instruction_data, 
+          vec![AccountMeta::new(greeted_pubkey, false)],
+        )],
+        Some(&payer.pubkey()),
+    );
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    // Verify account has two greetings
+    let greeted_account = banks_client
+        .get_account(greeted_pubkey)
+        .await
+        .expect("get_account")
+        .expect("greeted_account not found");
+    assert_eq!(
+        GreetingAccount::try_from_slice(&greeted_account.data)
+            .unwrap()
+            .counter,
+        202
+    );
+
+    // Greet again
+    let instruction_data: Vec<u8> = vec![0,0,0,0,2]; // the last byte is ignored but makes the instruction unique in the slot
+    let mut transaction = Transaction::new_with_payer(
+      &[Instruction::new_with_bytes(
+          program_id,
+          &instruction_data, 
+          vec![AccountMeta::new(greeted_pubkey, false)],
+        )],
+        Some(&payer.pubkey()),
+    );
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    // Verify account has two greetings
+    let greeted_account = banks_client
+        .get_account(greeted_pubkey)
+        .await
+        .expect("get_account")
+        .expect("greeted_account not found");
+    assert_eq!(
+        GreetingAccount::try_from_slice(&greeted_account.data)
+            .unwrap()
+            .counter,
+        203
+    );
+
+    // Decrease counter
+    let instruction_data: Vec<u8> = vec![1,0,0,0,1]; // the last byte is ignored but makes the instruction unique in the slot
+    let mut transaction = Transaction::new_with_payer(
+      &[Instruction::new_with_bytes(
+          program_id,
+          &instruction_data, 
+          vec![AccountMeta::new(greeted_pubkey, false)],
+        )],
+        Some(&payer.pubkey()),
+    );
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    // Verify account has two greetings
+    let greeted_account = banks_client
+        .get_account(greeted_pubkey)
+        .await
+        .expect("get_account")
+        .expect("greeted_account not found");
+    assert_eq!(
+        GreetingAccount::try_from_slice(&greeted_account.data)
+            .unwrap()
+            .counter,
+        202
+    );
+
+    // Decrease counter
+    let instruction_data: Vec<u8> = vec![1,0,0,0,2]; // the last byte is ignored but makes the instruction unique in the slot
+    let mut transaction = Transaction::new_with_payer(
+      &[Instruction::new_with_bytes(
+          program_id,
+          &instruction_data, 
+          vec![AccountMeta::new(greeted_pubkey, false)],
+        )],
+        Some(&payer.pubkey()),
+    );
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    // Verify account has two greetings
+    let greeted_account = banks_client
+        .get_account(greeted_pubkey)
+        .await
+        .expect("get_account")
+        .expect("greeted_account not found");
+    assert_eq!(
+        GreetingAccount::try_from_slice(&greeted_account.data)
+            .unwrap()
+            .counter,
+        201
     );
 }

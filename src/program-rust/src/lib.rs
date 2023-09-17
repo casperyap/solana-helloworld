@@ -28,7 +28,9 @@ pub fn process_instruction(
     instruction_data: &[u8], // Ignored, all helloworld instructions are hellos
 ) -> ProgramResult {
     msg!("Hello World Rust program entrypoint");
+    msg!("Instruction data: {:?}", instruction_data);
     let instruction = HelloInstruction::unpack(instruction_data)?;
+    msg!("Instruction: {:?}", instruction);
 
     // Iterating accounts is safer than indexing
     let accounts_iter = &mut accounts.iter();
@@ -63,14 +65,14 @@ pub fn process_instruction(
 mod test {
     use super::*;
     use solana_program::clock::Epoch;
-    use std::mem;
+    use std::{mem, str::FromStr};
 
     #[test]
     fn test_sanity() {
-        let program_id = Pubkey::default();
-        let key = Pubkey::default();
+        let program_id = Pubkey::default(); 
+        let key = Pubkey::default(); 
         let mut lamports = 0;
-        let mut data = vec![0; mem::size_of::<u32>()];
+        let mut data = vec![0; mem::size_of::<u32>()]; //NOTE: This size depends on the size of the GreetingAccount (line 16 to 19). Change accordingly.
         let owner = Pubkey::default();
         let account = AccountInfo::new(
             &key,
@@ -82,7 +84,7 @@ mod test {
             false,
             Epoch::default(),
         );
-        let instruction_data: Vec<u8> = Vec::new();
+        let instruction_data: Vec<u8> = vec![0,0,0,0,0];
 
         let accounts = vec![account];
 
@@ -92,6 +94,7 @@ mod test {
                 .counter,
             0
         );
+
         process_instruction(&program_id, &accounts, &instruction_data).unwrap();
         assert_eq!(
             GreetingAccount::try_from_slice(&accounts[0].data.borrow())
@@ -99,12 +102,35 @@ mod test {
                 .counter,
             1
         );
+
         process_instruction(&program_id, &accounts, &instruction_data).unwrap();
         assert_eq!(
             GreetingAccount::try_from_slice(&accounts[0].data.borrow())
                 .unwrap()
                 .counter,
             2
+        );
+
+        let instruction_data: Vec<u8> = vec![1,0,0,0,0];
+        process_instruction(&program_id, &accounts, &instruction_data).unwrap();
+        assert_eq!(
+            GreetingAccount::try_from_slice(&accounts[0].data.borrow())
+                .unwrap()
+                .counter,
+            1
+        );
+
+        let set_value = u32::to_le_bytes(101); //get an byte array with little endian format.
+        let mut instruction_data: Vec<u8> = vec![2,0,0,0,0];
+        for i in 0..4{
+          instruction_data[i+1] = set_value[i];
+        }
+        process_instruction(&program_id, &accounts, &instruction_data).unwrap();
+        assert_eq!(
+            GreetingAccount::try_from_slice(&accounts[0].data.borrow())
+                .unwrap()
+                .counter,
+            101
         );
     }
 }

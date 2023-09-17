@@ -14,7 +14,6 @@ pub enum HelloInstruction{
 impl HelloInstruction{
     pub fn unpack(input: &[u8]) -> Result<Self, ProgramError>{
         let (&tag, rest) = input.split_first().ok_or(ProgramError::InvalidInstructionData)?;
-
         match tag{
             0 => return Ok(HelloInstruction::Increment),
             1 => return Ok(HelloInstruction::Decrement),
